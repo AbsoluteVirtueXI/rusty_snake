@@ -1,8 +1,8 @@
 use bevy::{core::FixedTimestep, prelude::*};
 use rand::prelude::random;
 
-const ARENA_WIDTH: u32 = 10;
-const ARENA_HEIGHT: u32 = 10;
+const ARENA_WIDTH: u32 = 11;
+const ARENA_HEIGHT: u32 = 11;
 const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
 
@@ -40,7 +40,7 @@ fn main() {
             width: 500.0,
             height: 500.0,
             title: "Rusty Snake".to_string(),
-            ..Default::default()
+            ..default()
         })
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_snake)
@@ -57,6 +57,7 @@ fn main() {
                 .with_system(size_scaling),
         )
         .add_plugins(DefaultPlugins)
+        .add_plugins(DebugPlugin)
         .run();
 }
 
@@ -69,16 +70,12 @@ fn spawn_snake(mut commands: Commands) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: SNAKE_HEAD_COLOR,
-                ..Default::default()
+                ..default()
             },
-            transform: Transform {
-                scale: Vec3::splat(10.0),
-                ..Default::default()
-            },
-            ..Default::default()
+            ..default()
         })
         .insert(SnakeHead)
-        .insert(Position { x: 3, y: 3 })
+        .insert(Position { x: 5, y: 5 })
         .insert(Size::square(0.8));
 }
 
@@ -87,9 +84,9 @@ fn spawn_food(mut commands: Commands) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: FOOD_COLOR,
-                ..Default::default()
+                ..default()
             },
-            ..Default::default()
+            ..default()
         })
         .insert(Food)
         .insert(Position {
