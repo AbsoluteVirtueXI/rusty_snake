@@ -1,4 +1,6 @@
+use bevy::prelude::*;
 use bevy::{core::FixedTimestep, prelude::*};
+use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
 use rand::prelude::random;
 
 const ARENA_WIDTH: u32 = 11;
@@ -6,19 +8,19 @@ const ARENA_HEIGHT: u32 = 11;
 const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 struct SnakeHead;
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 struct Food;
 
-#[derive(Component, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Clone, Copy, PartialEq, Eq, Inspectable)]
 struct Position {
     x: i32,
     y: i32,
 }
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 struct Size {
     width: f32,
     height: f32,
@@ -57,7 +59,7 @@ fn main() {
                 .with_system(size_scaling),
         )
         .add_plugins(DefaultPlugins)
-        .add_plugins(DebugPlugin)
+        .add_plugin(DebugPlugin)
         .run();
 }
 
@@ -139,5 +141,17 @@ fn snake_movement(
         if keyboard_input.pressed(KeyCode::Down) {
             position.y -= 1;
         }
+    }
+}
+
+pub struct DebugPlugin;
+
+impl Plugin for DebugPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(WorldInspectorPlugin::new())
+            .register_inspectable::<SnakeHead>()
+            .register_inspectable::<Position>()
+            .register_inspectable::<Size>()
+            .register_inspectable::<Food>();
     }
 }
