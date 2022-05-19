@@ -1,5 +1,5 @@
+use bevy::core::FixedTimestep;
 use bevy::prelude::*;
-use bevy::{core::FixedTimestep, prelude::*};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
 use rand::prelude::random;
 
