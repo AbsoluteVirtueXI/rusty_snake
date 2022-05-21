@@ -117,7 +117,7 @@ fn spawn_snake(mut commands: Commands, mut segments: ResMut<SnakeSegments>) {
             .insert(Position { x: 5, y: 5 })
             .insert(Size::square(0.8))
             .id(),
-        spawn_segment(commands, Position { x: 5, y: 4 }),
+        spawn_segment(commands, Position { x: 5, y: 4 }), // TODO should be relative to head (always!!)
     ]);
 }
 
