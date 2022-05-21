@@ -63,6 +63,8 @@ impl Size {
     }
 }
 
+struct GrowthEvent;
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
@@ -75,11 +77,13 @@ fn main() {
         .insert_resource(SnakeSegments::default())
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_snake)
+        .add_event::<GrowthEvent>()
         .add_system(snake_movement_input.before(snake_movement))
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.150))
-                .with_system(snake_movement),
+                .with_system(snake_movement)
+                .with_system(snake_eating.after(snake_movement)),
         )
         .add_system_set(
             SystemSet::new()
@@ -225,6 +229,22 @@ fn snake_movement(
             .for_each(|(pos, segment)| {
                 *positions.get_mut(*segment).unwrap() = *pos;
             });
+    }
+}
+
+fn snake_eating(
+    mut commands: Commands,
+    mut growth_writer: EventWriter<GrowthEvent>,
+    food_positions: Query<(Entity, &Position), With<Food>>,
+    head_positions: Query<&Position, With<SnakeHead>>,
+) {
+    for head_pos in head_positions.iter() {
+        for (ent, food_pos) in food_positions.iter() {
+            if head_pos == food_pos {
+                commands.entity(ent).despawn();
+                growth_writer.send(GrowthEvent);
+            }
+        }
     }
 }
 
