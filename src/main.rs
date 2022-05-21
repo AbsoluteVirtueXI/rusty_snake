@@ -65,6 +65,11 @@ impl Size {
 
 struct GrowthEvent;
 
+#[derive(Default)]
+struct LastTailPosition(Option<Position>);
+
+struct GameOverEvent;
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
@@ -75,16 +80,20 @@ fn main() {
             ..default()
         })
         .insert_resource(SnakeSegments::default())
+        .insert_resource(LastTailPosition::default())
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_snake)
         .add_event::<GrowthEvent>()
+        .add_event::<GameOverEvent>()
         .add_system(snake_movement_input.before(snake_movement))
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.150))
                 .with_system(snake_movement)
-                .with_system(snake_eating.after(snake_movement)),
+                .with_system(snake_eating.after(snake_movement))
+                .with_system(snake_growth.after(snake_eating)),
         )
+        .add_system(game_over.after(snake_movement))
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
@@ -118,6 +127,7 @@ fn spawn_snake(mut commands: Commands, mut segments: ResMut<SnakeSegments>) {
             .insert(SnakeHead {
                 direction: Direction::Up,
             })
+            .insert(SnakeSegment)
             .insert(Position { x: 5, y: 5 })
             .insert(Size::square(0.8))
             .id(),
@@ -204,6 +214,8 @@ fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&m
 }
 
 fn snake_movement(
+    mut game_over_writer: EventWriter<GameOverEvent>,
+    mut last_tail_position: ResMut<LastTailPosition>,
     segments: ResMut<SnakeSegments>,
     mut heads: Query<(Entity, &SnakeHead)>,
     mut positions: Query<&mut Position>,
@@ -216,11 +228,23 @@ fn snake_movement(
 
         let mut head_pos = positions.get_mut(head_entity).unwrap();
 
-        match head.direction {
+        match &head.direction {
             Direction::Up => head_pos.y += 1,
             Direction::Down => head_pos.y -= 1,
             Direction::Left => head_pos.x -= 1,
             Direction::Right => head_pos.x += 1,
+        }
+
+        if head_pos.x < 0
+            || head_pos.y < 0
+            || head_pos.x as u32 >= ARENA_WIDTH
+            || head_pos.y as u32 >= ARENA_HEIGHT
+        {
+            game_over_writer.send(GameOverEvent);
+        }
+
+        if segment_positions.contains(&head_pos) {
+            game_over_writer.send(GameOverEvent);
         }
 
         segment_positions
@@ -229,6 +253,7 @@ fn snake_movement(
             .for_each(|(pos, segment)| {
                 *positions.get_mut(*segment).unwrap() = *pos;
             });
+        *last_tail_position = LastTailPosition(Some(*segment_positions.last().unwrap()));
     }
 }
 
@@ -240,11 +265,38 @@ fn snake_eating(
 ) {
     for head_pos in head_positions.iter() {
         for (ent, food_pos) in food_positions.iter() {
-            if head_pos == food_pos {
+            if food_pos == head_pos {
                 commands.entity(ent).despawn();
                 growth_writer.send(GrowthEvent);
             }
         }
+    }
+}
+
+fn snake_growth(
+    commands: Commands,
+    last_tail_position: Res<LastTailPosition>,
+    mut segments: ResMut<SnakeSegments>,
+    mut growth_reader: EventReader<GrowthEvent>,
+) {
+    if growth_reader.iter().next().is_some() {
+        segments.push(spawn_segment(commands, last_tail_position.0.unwrap()));
+    }
+}
+
+fn game_over(
+    mut commands: Commands,
+    mut reader: EventReader<GameOverEvent>,
+    segments_res: ResMut<SnakeSegments>,
+    food: Query<Entity, With<Food>>,
+    segments: Query<Entity, With<SnakeSegment>>,
+) {
+    if reader.iter().next().is_some() {
+        for ent in food.iter().chain(segments.iter()) {
+            commands.entity(ent).despawn();
+        }
+
+        spawn_snake(commands, segments_res);
     }
 }
 
