@@ -150,7 +150,17 @@ fn spawn_segment(mut commands: Commands, position: Position) -> Entity {
         .id()
 }
 
-fn spawn_food(mut commands: Commands) {
+fn spawn_food(mut commands: Commands, positions: Query<&Position, With<SnakeSegment>>) {
+    let food_position = loop {
+        let pos_candidate = Position {
+            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        };
+        if !positions.iter().any(|&pos| pos == pos_candidate) {
+            break pos_candidate;
+        }
+    };
+
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -160,10 +170,7 @@ fn spawn_food(mut commands: Commands) {
             ..default()
         })
         .insert(Food)
-        .insert(Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
-        })
+        .insert(food_position)
         .insert(Size::square(0.8));
 }
 
