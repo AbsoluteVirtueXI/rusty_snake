@@ -11,8 +11,8 @@ WIP
 
 ## Technologies
 
-language: [Rust](https://www.rust-lang.org/)
-Game engine: [Bevy](https://bevyengine.org/)
+language: [Rust](https://www.rust-lang.org/)  
+Game engine: [Bevy](https://bevyengine.org/)  
 Blockchain framework: [Substrate](https://substrate.io/)
 
 ## Arts
